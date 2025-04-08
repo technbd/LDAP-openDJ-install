@@ -49,6 +49,15 @@ tekneed=dc (domain component)
 
 
 
+_Set local DNS Entry:_
+
+```
+vim /etc/hosts
+
+192.168.10.193	localvm01.technbd.net     localvm01
+```
+
+
 
 ### Download OpenDJ:
 
@@ -88,6 +97,121 @@ echo $JAVA_HOME
 ### Install OpenDJ using CLI mode: 
 
 
+
+#### Requires Info:
+
+- Bind DN: Used to authenticate and bind to the LDAP server
+- Base DN: Defines the starting point for searches or operations
+- Root User DN: is the administrative account used to manage the LDAP server, perform configurations, and execute tasks such as adding, deleting, or modifying entries in the directory. **In OpenDJ, the Root User DN is usually set to `cn=Directory Manager`, but the exact DN can vary depending on how the server is configured.**
+
+
+```
+FQHN: localvm01.technbd.net
+LDAP Listener Port: 1389
+Administrator port: 4444
+
+Bind DN: cn=Manager,dc=rcms,dc=com
+Base DN: dc=rcms,dc=com
+
+Root User DN: cn=Manager,dc=rcms,dc=com
+password: your_password
+```
+
+
+### Method-1:
+
+#### Create sample LDIF File:
+
+```
+cat <<EOF > /home/init.ldif
+
+dn: dc=rcms,dc=com
+objectClass: top
+objectClass: domain
+dc: rcms
+
+dn: cn=Manager,dc=rcms,dc=com
+objectClass: organizationalRole
+cn: Manager
+EOF
+```
+
+
+_If you want OpenDJ without preloaded data, omit the `--ldifFile` parameter:_
+
+```
+./setup --cli \
+  --rootUserDN "cn=Manager,dc=rcms,dc=com" \
+  --rootUserPassword 'secret' \
+  --hostname localvm01.technbd.net \
+  --ldapPort 1389 \
+  --adminConnectorPort 4444 \
+  --baseDN "dc=rcms,dc=com" \
+  --ldifFile /home/init.ldif \
+  --acceptLicense
+```
+
+
+
+```
+### Output: 
+
+
+Provide the backend type:
+
+    1)  JE Backend
+    2)  PDB Backend
+
+Enter choice [1]: 1
+
+Do you want to enable SSL? (yes / no) [no]: no
+
+Do you want to enable Start TLS? (yes / no) [no]: no
+
+Do you want to start the server when the configuration is completed? (yes /
+no) [yes]: yes
+
+
+Setup Summary
+=============
+LDAP Listener Port:            1389
+Administration Connector Port: 4444
+JMX Listener Port:
+LDAP Secure Access:            disabled
+Root User DN:                  cn=Manager,dc=rcms,dc=com
+Directory Data:                Backend Type: JE Backend
+                               Create New Base DN dc=rcms,dc=com
+Base DN Data: Import Data from LDIF File (/home/init.ldif)
+
+Start Server when the configuration is completed
+
+
+What would you like to do?
+
+    1)  Set up the server with the parameters above
+    2)  Provide the setup parameters again
+    3)  Print equivalent non-interactive command-line
+    4)  Cancel and exit
+
+Enter choice [1]: 1
+
+See /tmp/opendj-setup-316653540194892301.log for a detailed log of this
+operation.
+
+Configuring Directory Server ..... Done.
+Importing LDIF file /home/init.ldif ...... Done.
+Starting Directory Server ....... Done.
+
+To see basic server configuration status and configuration you can launch
+/root/opendj/bin/status
+
+```
+
+
+
+
+### Method-2:
+
 ```
 ./setup --cli
 ```
@@ -97,22 +221,22 @@ echo $JAVA_HOME
 ### Output: 
 
 What would you like to use as the initial root user DN for the Directory
-Server? [cn=Directory Manager]:     [-> Hit Enter]
+Server? [cn=Directory Manager]: cn=Manager,dc=rcms,dc=com     [-> Hit Enter]
 
-Please provide the password to use for the initial root user: opendj      [-> Hit Enter]
-Please re-enter the password for confirmation: opendj     [-> Hit Enter]
+Please provide the password to use for the initial root user: secret    [-> Hit Enter]
+Please re-enter the password for confirmation: secret     [-> Hit Enter]
 
 Provide the fully-qualified directory server host name that will be used when
 generating self-signed certificates for LDAP SSL/StartTLS, the administration
-connector, and replication [node1]: opendj.technbd.net      [-> Hit Enter]
+connector, and replication [localvm01.technbd.net]: localvm01.technbd.net     [-> Hit Enter]
 
 On which port would you like the Directory Server to accept connections from
-LDAP clients? [389]: 1389       [-> Hit Enter]
+LDAP clients? [389]: 1389     [-> Hit Enter]
 
 On which port would you like the Administration Connector to accept
-connections? [4444]: 2389       [-> Hit Enter]
+connections? [4444]: 4444     [-> Hit Enter]
 
-Do you want to create base DNs in the server? (yes / no) [yes]: yes     [-> Hit Enter]
+Do you want to create base DNs in the server? (yes / no) [yes]: yes   [-> Hit Enter]
 
 Provide the backend type:
 
@@ -121,7 +245,7 @@ Provide the backend type:
 
 Enter choice [1]: 1     [-> Hit Enter]
 
-Provide the base DN for the directory data: [dc=example,dc=com]: dc=technbd,dc=net       [-> Hit Enter]
+Provide the base DN for the directory data: [dc=example,dc=com]: dc=rcms,dc=com     [-> Hit Enter]
 Options for populating the database:
 
     1)  Leave the database empty
@@ -131,12 +255,12 @@ Options for populating the database:
 
 Enter choice [1]: 2     [-> Hit Enter]
 
-Do you want to enable SSL? (yes / no) [no]: no      [-> Hit Enter]
+Do you want to enable SSL? (yes / no) [no]: no    [-> Hit Enter]
 
-Do you want to enable Start TLS? (yes / no) [no]: no        [-> Hit Enter]
+Do you want to enable Start TLS? (yes / no) [no]: no      [-> Hit Enter]
 
 Do you want to start the server when the configuration is completed? (yes /
-no) [yes]: no       [-> Hit Enter]
+no) [yes]: yes      [-> Hit Enter]
 
 
 Setup Summary
@@ -145,12 +269,12 @@ LDAP Listener Port:            1389
 Administration Connector Port: 4444
 JMX Listener Port:
 LDAP Secure Access:            disabled
-Root User DN:                  cn=Directory Manager
+Root User DN:                  cn=Manager,dc=rcms,dc=com
 Directory Data:                Backend Type: JE Backend
-                               Create New Base DN dc=technbd,dc=net
-Base DN Data: Only Create Base Entry (dc=technbd,dc=net)
+                               Create New Base DN dc=rcms,dc=com
+Base DN Data: Only Create Base Entry (dc=rcms,dc=com)
 
-Do not start Server when the configuration is completed
+Start Server when the configuration is completed
 
 
 What would you like to do?
@@ -162,14 +286,16 @@ What would you like to do?
 
 Enter choice [1]: 1     [-> Hit Enter]
 
-See /tmp/opendj-setup-4964452117381574923.log for a detailed log of this
+See /tmp/opendj-setup-5885553560120168442.log for a detailed log of this
 operation.
 
 Configuring Directory Server ..... Done.
-Creating Base Entry dc=technbd,dc=net ..... Done.
+Creating Base Entry dc=rcms,dc=com ..... Done.
+Starting Directory Server ....... Done.
 
 To see basic server configuration status and configuration you can launch
-/apps/opendj/bin/status
+/root/opendj/bin/status
+
 ```
 
 
@@ -219,18 +345,18 @@ Build 20160109123031
 
 >>>> Specify OpenDJ LDAP connection parameters
 
-Administrator user bind DN [cn=Directory Manager]:      [-> Hit Enter]
+Administrator user bind DN [cn=Directory Manager]: "cn=Manager,dc=rcms,dc=com"
 
-Password for user 'cn=Directory Manager':       [-> Just Hit Enter (Password no need)]
+Password for user '"cn=Manager,dc=rcms,dc=com"': secret
 
           --- Server Status ---
 Server Run Status:        Started
 Open Connections:         0
 
           --- Server Details ---
-Host Name:                node1
-Administrative Users:     cn=Directory Manager
-Installation Path:        /apps/opendj
+Host Name:                localvm01.technbd.net
+Administrative Users:     cn=Manager,dc=rcms,dc=com
+Installation Path:        /root/opendj
 Version:                  OpenDJ 3.0.0
 Java Version:             <not available> (*)
 Administration Connector: Port 4444 (LDAPS)
@@ -245,13 +371,14 @@ Address:Port : Protocol : State
 0.0.0.0:8080 : HTTP     : Disabled
 
           --- Data Sources ---
-Base DN:     dc=technbd,dc=net
+Base DN:     dc=rcms,dc=com
 Backend ID:  userRoot
 Entries:     <not available> (*)
 Replication:
 
 * Information only available if you provide valid authentication information
 when launching the status command.
+
 ```
 
 
